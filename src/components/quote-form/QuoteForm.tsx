@@ -2,17 +2,23 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import ProgressIndicator from "./ProgressIndicator";
 import StepContainer from "./StepContainer";
 import DeviceCard from "./DeviceCard";
+import ModelSelection from "./ModelSelection";
+import IssueSelection from "./IssueSelection";
+import QuoteStep from "./QuoteStep";
+import tabletImage from "@/assets/tablet.png";
+import phoneImage from "@/assets/phone.png";
+import laptopImage from "@/assets/laptop.png";
+import computerImage from "@/assets/computer.png";
+import watchImage from "@/assets/watch.png";
 
 interface FormData {
   device: string;
   model: string;
-  issue: string;
+  issues: string[];
   location: string;
   name: string;
   email: string;
@@ -24,20 +30,9 @@ interface FormData {
 const STEPS = ["Device", "Model", "Issue", "Location", "Quote"];
 
 const DEVICES = [
-  { id: "tablet", name: "Tablet", icon: "📱" },
-  { id: "phone", name: "Phone", icon: "📞" },
-  { id: "laptop", name: "Laptop", icon: "💻" },
-  { id: "computer", name: "Computer", icon: "🖥️" },
-];
-
-const ISSUES = [
-  "Screen Repair",
-  "Battery Replacement", 
-  "Water Damage",
-  "Charging Port",
-  "Software Issues",
-  "Hardware Malfunction",
-  "Other",
+  { id: "tablet", name: "Tablet", image: tabletImage },
+  { id: "computer", name: "Computer", image: computerImage },
+  { id: "watch", name: "Apple Watch", image: watchImage },
 ];
 
 const QuoteForm = () => {
@@ -45,7 +40,7 @@ const QuoteForm = () => {
   const [formData, setFormData] = useState<FormData>({
     device: "",
     model: "",
-    issue: "",
+    issues: [],
     location: "",
     name: "",
     email: "",
@@ -56,7 +51,7 @@ const QuoteForm = () => {
   
   const { toast } = useToast();
 
-  const updateFormData = (field: keyof FormData, value: string | number) => {
+  const updateFormData = (field: keyof FormData, value: string | number | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -65,20 +60,22 @@ const QuoteForm = () => {
     const basePrice = 50;
     const deviceMultiplier = {
       tablet: 1.2,
-      phone: 1.0,
-      laptop: 1.5,
       computer: 1.8,
+      watch: 1.3,
     }[formData.device] || 1;
     
-    const issueMultiplier = {
-      "Screen Repair": 2.0,
-      "Battery Replacement": 1.5,
-      "Water Damage": 3.0,
-      "Charging Port": 1.3,
-      "Software Issues": 0.8,
-      "Hardware Malfunction": 2.5,
-      "Other": 1.0,
-    }[formData.issue] || 1;
+    const issueMultiplier = formData.issues.length > 0 ? 
+      formData.issues.reduce((total, issue) => {
+        const multipliers = {
+          "battery": 1.5,
+          "data-recovery": 3.0,
+          "diagnostic": 0.8,
+          "does-not-boot": 2.5,
+          "hard-drive": 2.0,
+          "overheats": 1.3,
+        };
+        return total + (multipliers[issue as keyof typeof multipliers] || 1.0);
+      }, 0) : 1;
 
     const quote = Math.round(basePrice * deviceMultiplier * issueMultiplier);
     updateFormData("quote", quote);
@@ -100,6 +97,12 @@ const QuoteForm = () => {
     }
   };
 
+  const handleIssuesContinue = () => {
+    if (currentStep < 5) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+
   const handleSubmit = async () => {
     // Here you would typically send data to your backend
     toast({
@@ -115,7 +118,7 @@ const QuoteForm = () => {
     switch (currentStep) {
       case 1: return formData.device !== "";
       case 2: return formData.model !== "";
-      case 3: return formData.issue !== "";
+      case 3: return formData.issues.length > 0;
       case 4: return formData.location !== "";
       case 5: return formData.name && formData.email && formData.phone;
       default: return false;
@@ -126,8 +129,8 @@ const QuoteForm = () => {
     switch (currentStep) {
       case 1:
         return (
-          <StepContainer title="Get Instant Price Quote" subtitle="Select your device">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <StepContainer title="Select your device">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {DEVICES.map((device) => (
                 <DeviceCard
                   key={device.id}
@@ -142,38 +145,23 @@ const QuoteForm = () => {
 
       case 2:
         return (
-          <StepContainer title="Device Model" subtitle="Enter your device model">
-            <div className="max-w-md mx-auto">
-              <Label htmlFor="model">Model</Label>
-              <Input
-                id="model"
-                value={formData.model}
-                onChange={(e) => updateFormData("model", e.target.value)}
-                placeholder="e.g., iPhone 13, iPad Pro, MacBook Air"
-                className="mt-2"
-              />
-            </div>
+          <StepContainer title="Get Instant Price Quote" subtitle={`${formData.device} > Select your device category`}>
+            <ModelSelection
+              deviceType={formData.device}
+              selectedModel={formData.model}
+              onSelect={(model) => updateFormData("model", model)}
+            />
           </StepContainer>
         );
 
       case 3:
         return (
-          <StepContainer title="What's the Issue?" subtitle="Select the problem with your device">
-            <div className="max-w-md mx-auto">
-              <Label htmlFor="issue">Issue</Label>
-              <Select value={formData.issue} onValueChange={(value) => updateFormData("issue", value)}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select an issue" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ISSUES.map((issue) => (
-                    <SelectItem key={issue} value={issue}>
-                      {issue}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <StepContainer title="Get Instant Price Quote" subtitle="Select your repair issues">
+            <IssueSelection
+              selectedIssues={formData.issues}
+              onSelectionChange={(issues) => updateFormData("issues", issues)}
+              onContinue={handleIssuesContinue}
+            />
           </StepContainer>
         );
 
@@ -195,67 +183,11 @@ const QuoteForm = () => {
 
       case 5:
         return (
-          <StepContainer title="Your Quote" subtitle="Enter your contact details to get the quote">
-            <div className="max-w-md mx-auto space-y-6">
-              <div className="bg-quote-background border border-quote-success/20 rounded-lg p-6 text-center">
-                <h3 className="text-2xl font-bold text-quote-success mb-2">
-                  Estimated Cost: ${formData.quote}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  For {formData.device} {formData.model} - {formData.issue}
-                </p>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => updateFormData("name", e.target.value)}
-                    placeholder="Your full name"
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => updateFormData("email", e.target.value)}
-                    placeholder="your.email@example.com"
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => updateFormData("phone", e.target.value)}
-                    placeholder="+1 (555) 000-0000"
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="message">Additional Message (Optional)</Label>
-                  <Textarea
-                    id="message"
-                    value={formData.message}
-                    onChange={(e) => updateFormData("message", e.target.value)}
-                    placeholder="Any additional details about the issue..."
-                    className="mt-1"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </div>
-          </StepContainer>
+          <QuoteStep
+            formData={formData}
+            onFormDataChange={(field, value) => updateFormData(field as keyof FormData, value)}
+            onSubmit={handleSubmit}
+          />
         );
 
       default:
@@ -264,19 +196,19 @@ const QuoteForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
       <ProgressIndicator currentStep={currentStep} steps={STEPS} />
       
       {renderStep()}
       
-      <div className="max-w-md mx-auto mt-12 flex gap-4">
-        {currentStep > 1 && (
-          <Button variant="outline" onClick={handleBack} className="flex-1">
-            Back
-          </Button>
-        )}
-        
-        {currentStep < 5 ? (
+      {currentStep < 5 && currentStep !== 3 && (
+        <div className="max-w-md mx-auto mt-12 flex gap-4">
+          {currentStep > 1 && (
+            <Button variant="outline" onClick={handleBack} className="flex-1">
+              Back
+            </Button>
+          )}
+          
           <Button 
             onClick={handleNext} 
             disabled={!canProceed()}
@@ -284,16 +216,8 @@ const QuoteForm = () => {
           >
             Next
           </Button>
-        ) : (
-          <Button 
-            onClick={handleSubmit}
-            disabled={!canProceed()}
-            className="flex-1"
-          >
-            Submit Quote Request
-          </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

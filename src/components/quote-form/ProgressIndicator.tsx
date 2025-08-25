@@ -10,9 +10,9 @@ const ProgressIndicator = ({ currentStep, steps }: ProgressIndicatorProps) => {
     <div className="w-full max-w-4xl mx-auto mb-12">
       <div className="flex items-center justify-between relative">
         {/* Progress line */}
-        <div className="absolute top-4 left-0 right-0 h-0.5 bg-step-inactive">
+        <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-300">
           <div 
-            className="h-full bg-step-active transition-all duration-500 ease-out"
+            className="h-full bg-red-500 transition-all duration-500 ease-out"
             style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
           />
         </div>
@@ -29,9 +29,8 @@ const ProgressIndicator = ({ currentStep, steps }: ProgressIndicatorProps) => {
                   "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300",
                   "border-2",
                   {
-                    "bg-step-completed border-step-completed text-white": isCompleted,
-                    "bg-step-active border-step-active text-white": isActive,
-                    "bg-white border-step-inactive text-step-inactive": !isActive && !isCompleted,
+                    "bg-red-500 border-red-500 text-white": isCompleted || isActive,
+                    "bg-white border-gray-300 text-gray-400": !isActive && !isCompleted,
                   }
                 )}
               >
