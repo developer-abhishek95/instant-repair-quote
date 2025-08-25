@@ -52,6 +52,15 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Quote form specific colors
+				'step-active': 'hsl(var(--step-active))',
+				'step-inactive': 'hsl(var(--step-inactive))',
+				'step-completed': 'hsl(var(--step-completed))',
+				'device-card': 'hsl(var(--device-card))',
+				'device-card-hover': 'hsl(var(--device-card-hover))',
+				'device-card-selected': 'hsl(var(--device-card-selected))',
+				'quote-success': 'hsl(var(--quote-success))',
+				'quote-background': 'hsl(var(--quote-background))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
